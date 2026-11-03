@@ -1,12 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../data/repositories/repositorio_localizacoes.dart';
 import '../../models/localizacao.dart';
 import '../../services/servico_localizacao.dart';
-import 'tela_coleta.dart';
 import 'tela_localizacoes.dart';
 import 'tela_mapa.dart';
 
@@ -47,11 +47,28 @@ class _TelaInicioState extends State<TelaInicio> {
   Future<void> _iniciarColeta() async {
     try {
       await _servico.verificarPermissao();
+      final configuracoes = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+          ? AndroidSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 0,
+              intervalDuration: const Duration(seconds: 20),
+              foregroundNotificationConfig: const ForegroundNotificationConfig(
+                notificationTitle: 'Coleta de localização ativa',
+                notificationText: 'Registrando suas posições em segundo plano.',
+                notificationChannelName: 'Coleta de localização',
+                notificationIcon: AndroidResource(
+                  name: 'ic_localizacoes',
+                  defType: 'mipmap',
+                ),
+                setOngoing: true,
+              ),
+            )
+          : const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            );
       final stream = Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
+        locationSettings: configuracoes,
       );
       _assinatura = stream.listen((posicao) async {
         final localizacao = Localizacao(

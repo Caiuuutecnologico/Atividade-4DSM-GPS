@@ -17,6 +17,11 @@ class TelaMapa extends StatefulWidget {
 class _TelaMapaState extends State<TelaMapa> {
   final _controlador = MapController();
   final _repositorio = RepositorioLocalizacoes();
+  final _provedorDeTiles = NetworkTileProvider(
+    cachingProvider: BuiltInMapCachingProvider.getOrCreateInstance(
+      maxCacheSize: 100 * 1024 * 1024,
+    ),
+  );
   late List<Localizacao> _localizacoes;
   bool _carregando = false;
   bool _mapaPronto = false;
@@ -105,6 +110,7 @@ class _TelaMapaState extends State<TelaMapa> {
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.atividade_avaliativa_dispositivos_moveis',
+                tileProvider: _provedorDeTiles,
               ),
               MarkerLayer(
                 markers: [
