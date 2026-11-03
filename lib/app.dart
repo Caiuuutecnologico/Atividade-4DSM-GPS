@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'features/localizacoes/presentation/screens/tela_localizacoes.dart';
+import 'features/localizacoes/presentation/screens/tela_inicio.dart';
 
 class AplicacaoLocalizacoes extends StatelessWidget {
   const AplicacaoLocalizacoes({super.key});
@@ -10,6 +10,6 @@ class AplicacaoLocalizacoes extends StatelessWidget {
         title: 'Minhas localizações',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
-        home: const TelaLocalizacoes(),
+        home: const TelaInicio(),
       );
 }

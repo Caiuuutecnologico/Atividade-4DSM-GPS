@@ -18,9 +18,9 @@ class ItemLocalizacao extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: const CircleAvatar(child: Icon(Icons.place_outlined)),
-        title: Text('${localizacao.latitude.toStringAsFixed(5)}, '
-            '${localizacao.longitude.toStringAsFixed(5)}'),
-        subtitle: Text('$dataFormatada\nPrecisão: ${localizacao.precisao.toStringAsFixed(0)} m'),
+        title: Text('${localizacao.latitude.toStringAsFixed(6)}, '
+            '${localizacao.longitude.toStringAsFixed(6)}'),
+        subtitle: Text('$dataFormatada\nPrecisão estimada: ${localizacao.precisao.toStringAsFixed(1)} m'),
         isThreeLine: true,
         trailing: onExcluir == null
             ? null

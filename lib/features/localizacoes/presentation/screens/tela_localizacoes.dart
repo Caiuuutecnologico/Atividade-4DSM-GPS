@@ -3,13 +3,14 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/repositories/repositorio_localizacoes.dart';
 import '../../models/localizacao.dart';
-import '../../services/cache_mapa.dart';
 import '../widgets/item_localizacao.dart';
 import 'tela_coleta.dart';
 import 'tela_mapa.dart';
 
 class TelaLocalizacoes extends StatefulWidget {
-  const TelaLocalizacoes({super.key});
+  const TelaLocalizacoes({super.key, this.coletaAtiva = false});
+
+  final bool coletaAtiva;
 
   @override
   State<TelaLocalizacoes> createState() => _TelaLocalizacoesState();
@@ -17,9 +18,9 @@ class TelaLocalizacoes extends StatefulWidget {
 
 class _TelaLocalizacoesState extends State<TelaLocalizacoes> {
   final _repositorio = RepositorioLocalizacoes();
-  final _cacheMapa = CacheMapa();
   late Future<List<Localizacao>> _localizacoes;
   bool _exibirAvisoDemonstracao = false;
+  bool _limpando = false;
 
   @override
   void initState() {
@@ -39,7 +40,9 @@ class _TelaLocalizacoesState extends State<TelaLocalizacoes> {
     return registros;
   }
 
-  void _recarregar() => setState(() => _localizacoes = _carregarRegistros());
+  void _recarregar() {
+    setState(() => _localizacoes = _carregarRegistros());
+  }
 
   Future<void> _abrirColeta() async {
     final salvou = await Navigator.push<bool>(
@@ -50,11 +53,10 @@ class _TelaLocalizacoesState extends State<TelaLocalizacoes> {
   }
 
   Future<void> _abrirMapa(List<Localizacao> localizacoes) async {
-    _cacheMapa.atualizar(localizacoes);
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) => TelaMapa(localizacoes: _cacheMapa.localizacoes),
+        builder: (_) => TelaMapa(localizacoes: localizacoes),
       ),
     );
   }
@@ -63,8 +65,12 @@ class _TelaLocalizacoesState extends State<TelaLocalizacoes> {
     final confirmou = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Limpar localizações?'),
-        content: const Text('Todos os registros salvos serão removidos.'),
+        title: const Text('Limpar histórico?'),
+        content: Text(
+          'Esta operação é permanente e removerá todos os registros salvos, '
+          'inclusive os que não aparecem nesta lista.'
+          '${widget.coletaAtiva ? '\n\nA coleta está ativa; novos registros continuarão sendo salvos.' : ''}',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -72,15 +78,27 @@ class _TelaLocalizacoesState extends State<TelaLocalizacoes> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Limpar tudo'),
+            child: const Text('Limpar histórico'),
           ),
         ],
       ),
     );
-    if (confirmou == true) {
+    if (confirmou != true || !mounted) return;
+    setState(() => _limpando = true);
+    try {
       await _repositorio.limparTudo();
-      _cacheMapa.limpar();
+      if (!mounted) return;
       _recarregar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Histórico limpo com sucesso.')),
+      );
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível limpar o histórico: $erro')),
+      );
+    } finally {
+      if (mounted) setState(() => _limpando = false);
     }
   }
 
@@ -91,8 +109,13 @@ class _TelaLocalizacoesState extends State<TelaLocalizacoes> {
       actions: [
         IconButton(
           tooltip: 'Atualizar',
-          onPressed: _recarregar,
+          onPressed: _limpando ? null : _recarregar,
           icon: const Icon(Icons.refresh),
+        ),
+        IconButton(
+          tooltip: 'Limpar histórico',
+          onPressed: _limpando ? null : _confirmarLimpeza,
+          icon: const Icon(Icons.delete_sweep_outlined),
         ),
       ],
     ),
@@ -142,9 +165,9 @@ class _TelaLocalizacoesState extends State<TelaLocalizacoes> {
               return Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  onPressed: _confirmarLimpeza,
+                  onPressed: _limpando ? null : _confirmarLimpeza,
                   icon: const Icon(Icons.delete_sweep_outlined),
-                  label: const Text('Limpar tudo'),
+                  label: Text(_limpando ? 'Limpando…' : 'Limpar histórico'),
                 ),
               );
             }

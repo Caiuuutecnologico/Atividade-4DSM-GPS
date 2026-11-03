@@ -3,7 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/localizacao.dart';
 
 class ServicoLocalizacao {
-  Future<Localizacao> obterLocalizacaoAtual() async {
+  Future<void> verificarPermissao() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw Exception('Ative o serviço de localização do dispositivo.');
     }
@@ -19,6 +19,10 @@ class ServicoLocalizacao {
       throw Exception('Permissão bloqueada. Habilite-a nas configurações.');
     }
 
+  }
+
+  Future<Localizacao> obterLocalizacaoAtual() async {
+    await verificarPermissao();
     final posicao = await Geolocator.getCurrentPosition();
     return Localizacao(
       latitude: posicao.latitude,
